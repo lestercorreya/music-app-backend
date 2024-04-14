@@ -1,0 +1,202 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+  
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 10
+
+Resources:
+  AddUserFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: src/users
+      Handler: app.addUserHandler
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      MemorySize: 512
+      Events:
+        AddUser:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /addUser
+            Method: post 
+      Policies: 
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable 
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints: 
+        - app.ts
+  GetUserFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: src/users
+      Handler: app.getUserHandler
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      MemorySize: 512
+      Events:
+        AddUser:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /getUser
+            Method: get 
+      Policies: 
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable 
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints: 
+        - app.ts
+  LoginUserFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: src/users
+      Handler: app.loginUserHandler
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      MemorySize: 512
+      Events:
+        AddUser:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /loginUser
+            Method: post
+      Policies: 
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable 
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints: 
+        - app.ts
+  GetMusicFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: src/music
+      Handler: app.getMusicHandler
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      MemorySize: 512
+      Events:
+        AddUser:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /getMusic
+            Method: post
+      Policies: 
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MusicTable
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints: 
+        - app.ts     
+  GetSubscriptionsForUserFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: src/subscriptions
+      Handler: app.getSubscriptionsForUserHandler
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      MemorySize: 512
+      Events:
+        AddUser:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /getSubscriptionsForUser
+            Method: post
+      Policies: 
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SubscriptionsTable 
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MusicTable 
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints: 
+        - app.ts  
+  AddSubscription:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: src/subscriptions
+      Handler: app.addSubscriptionHandler
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      MemorySize: 512
+      Events:
+        AddUser:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /addSubscription
+            Method: post
+      Policies: 
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SubscriptionsTable 
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints: 
+        - app.ts 
+
+  UsersTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: users
+      PrimaryKey: 
+        Name: email
+        Type: String
+  MusicTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: music 
+      PrimaryKey: 
+        Name: title 
+        Type: String
+  SubscriptionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: subscriptions
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: user
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: UserIndex
+          KeySchema:
+            - AttributeName: user
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
