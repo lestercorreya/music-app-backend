@@ -1,6 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk'
 import jwt from 'jsonwebtoken'
+import { createResponse } from '../functions/helperFunctions'
 
 const dynamoDBClient = new AWS.DynamoDB.DocumentClient()
 
@@ -43,33 +44,15 @@ export const loginUserHandler = async (event: APIGatewayProxyEvent): Promise<API
             if (Item.password === password) {
                 const token = jwt.sign({ email: Item.email }, 'secret')
 
-                return {
-                    statusCode: 200,
-                    body: JSON.stringify({ token })
-                }
+                return createResponse(200, { token })
             } else {
-                return {
-                    statusCode: 400,
-                    body: JSON.stringify({
-                        message: "Credentials Invalid!"
-                    })
-                }
+                return createResponse(400, { message: "Credentials Invalid!" })
             }
         } else {
-            return {
-                statusCode: 400,
-                body: JSON.stringify({
-                    message: "Credentials Invalid!"
-                })
-            }
+            return createResponse(400, { message: "Credentials Invalid!" })
         }
     } catch (err) {
-        return {
-            statusCode: 500,
-            body: JSON.stringify({
-                message: err
-            }),
-        };
+        return createResponse(500, { message: err })
     }
 }
 
