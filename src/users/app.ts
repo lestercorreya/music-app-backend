@@ -7,23 +7,16 @@ const dynamoDBClient = new AWS.DynamoDB.DocumentClient()
 
 export const getUserHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     try {
-        const authHeader = event.headers["Authorization"]
-        const token = authHeader && authHeader.split(" ")[1]
+        const { token } = JSON.parse(event.body || '{}');
 
         if (token == null) throw new Error('JWT Token invalid');
 
         var userObject = jwt.verify(token, "secret")
 
-        return {
-            statusCode: 200,
-            body: JSON.stringify(userObject)
-        }
+        return createResponse(200, { user: userObject })
     }
-    catch (err) {
-        return {
-            statusCode: 400,
-            body: JSON.stringify({ message: err })
-        }
+    catch {
+        return createResponse(400, { message: "Something went wrong!" })
     }
 }
 
@@ -42,17 +35,17 @@ export const loginUserHandler = async (event: APIGatewayProxyEvent): Promise<API
 
         if (Item) {
             if (Item.password === password) {
-                const token = jwt.sign({ email: Item.email }, 'secret')
+                const token = jwt.sign({ email: Item.email, username: Item.username }, 'secret')
 
                 return createResponse(200, { token })
             } else {
                 return createResponse(400, { message: "Credentials Invalid!" })
             }
         } else {
-            return createResponse(400, { message: "Credentials Invalid!" })
+            return createResponse(400, { message: "email or password is invalid!" })
         }
     } catch (err) {
-        return createResponse(500, { message: err })
+        return createResponse(500, { message: "email or password is invalid!" })
     }
 }
 
@@ -70,12 +63,7 @@ export const addUserHandler = async (event: APIGatewayProxyEvent): Promise<APIGa
         const { Item } = await dynamoDBClient.get(userParam).promise()
 
         if (Item) {
-            return {
-                statusCode: 400,
-                body: JSON.stringify({
-                    message: event.headers
-                })
-            }
+            return createResponse(400, { message: "The email already exists!" })
         } else {
             const newUser = {
                 TableName: "users",
@@ -88,19 +76,9 @@ export const addUserHandler = async (event: APIGatewayProxyEvent): Promise<APIGa
 
             await dynamoDBClient.put(newUser).promise();
 
-            return {
-                statusCode: 200,
-                body: JSON.stringify({
-                    message: 'User added successfully',
-                }),
-            };
+            return createResponse(200, { message: "User Added Successfully!" })
         }
     } catch (err) {
-        return {
-            statusCode: 500,
-            body: JSON.stringify({
-                message: "Something went wrong!"
-            }),
-        };
+        return createResponse(500, { message: "Something went Wrong!" })
     }
 };

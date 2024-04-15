@@ -1,5 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk'
+import { createResponse } from '../functions/helperFunctions'
 
 const dynamoDBClient = new AWS.DynamoDB.DocumentClient()
 
@@ -10,15 +11,9 @@ export const getMusicHandler = async (event: APIGatewayProxyEvent): Promise<APIG
         }
         const data = await dynamoDBClient.scan(getMusicParams).promise()
 
-        return {
-            statusCode: 200,
-            body: JSON.stringify({ music: data.Items })
-        }
+        return createResponse(200, { music: data.Items })
     }
-    catch (err) {
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ message: err })
-        }
+    catch {
+        return createResponse(500, { message: "Something went wrong!" })
     }
 }

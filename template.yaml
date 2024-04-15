@@ -7,6 +7,15 @@ Globals:
     Timeout: 10
 
 Resources:
+  ApiGatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Cors:
+        AllowMethods: "'OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+        MaxAge: "'600'"
   AddUserFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
@@ -22,6 +31,8 @@ Resources:
           Properties:
             Path: /addUser
             Method: post 
+            RestApiId:
+              Ref: ApiGatewayApi
       Policies: 
         - DynamoDBCrudPolicy:
             TableName: !Ref UsersTable 
@@ -47,7 +58,9 @@ Resources:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
             Path: /getUser
-            Method: get 
+            Method: post
+            RestApiId:
+              Ref: ApiGatewayApi
       Policies: 
         - DynamoDBCrudPolicy:
             TableName: !Ref UsersTable 
@@ -74,6 +87,8 @@ Resources:
           Properties:
             Path: /loginUser
             Method: post
+            RestApiId:
+              Ref: ApiGatewayApi
       Policies: 
         - DynamoDBCrudPolicy:
             TableName: !Ref UsersTable 
@@ -99,7 +114,9 @@ Resources:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
             Path: /getMusic
-            Method: post
+            Method: get 
+            RestApiId:
+              Ref: ApiGatewayApi
       Policies: 
         - DynamoDBCrudPolicy:
             TableName: !Ref MusicTable
@@ -126,6 +143,8 @@ Resources:
           Properties:
             Path: /getSubscriptionsForUser
             Method: post
+            RestApiId:
+              Ref: ApiGatewayApi
       Policies: 
         - DynamoDBCrudPolicy:
             TableName: !Ref SubscriptionsTable 
@@ -139,7 +158,7 @@ Resources:
         Sourcemap: true
         EntryPoints: 
         - app.ts  
-  AddSubscription:
+  AddSubscriptionFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
       CodeUri: src/subscriptions
@@ -154,6 +173,36 @@ Resources:
           Properties:
             Path: /addSubscription
             Method: post
+            RestApiId:
+              Ref: ApiGatewayApi
+      Policies: 
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SubscriptionsTable 
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints: 
+        - app.ts 
+  RemoveSubscriptionFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: src/subscriptions
+      Handler: app.removeSubscriptionHandler
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      MemorySize: 512
+      Events:
+        AddUser:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /removeSubscription
+            Method: post
+            RestApiId:
+              Ref: ApiGatewayApi
       Policies: 
         - DynamoDBCrudPolicy:
             TableName: !Ref SubscriptionsTable 
@@ -189,6 +238,8 @@ Resources:
           AttributeType: S
         - AttributeName: user
           AttributeType: S
+        - AttributeName: music 
+          AttributeType: S
       KeySchema:
         - AttributeName: id
           KeyType: HASH
@@ -197,6 +248,14 @@ Resources:
           KeySchema:
             - AttributeName: user
               KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: QueryIndex
+          KeySchema:
+            - AttributeName: user
+              KeyType: HASH
+            - AttributeName: music 
+              KeyType: RANGE 
           Projection:
             ProjectionType: ALL
       BillingMode: PAY_PER_REQUEST

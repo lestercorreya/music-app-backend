@@ -1,6 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk'
 import { v4 } from 'uuid'
+import { createResponse } from '../functions/helperFunctions'
 
 const dynamoDBClient = new AWS.DynamoDB.DocumentClient()
 
@@ -10,7 +11,7 @@ export const getSubscriptionsForUserHandler = async (event: APIGatewayProxyEvent
 
         const getSubscriptionsForUserParams = {
             TableName: "subscriptions",
-            IndexName: "UserIndex",
+            IndexName: "QueryIndex",
             KeyConditionExpression: "#user = :email",
             ExpressionAttributeNames: {
                 "#user": "user"
@@ -34,16 +35,10 @@ export const getSubscriptionsForUserHandler = async (event: APIGatewayProxyEvent
             Items[i] = musicData.Item ? musicData.Item : {}
         };
 
-        return {
-            statusCode: 200,
-            body: JSON.stringify({ subscriptions: Items })
-        }
+        return createResponse(200, { subscriptions: Items })
     }
-    catch (err) {
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ message: err })
-        }
+    catch {
+        return createResponse(500, { message: "Something went wrong!" })
     }
 }
 
@@ -62,17 +57,45 @@ export const addSubscriptionHandler = async (event: APIGatewayProxyEvent): Promi
 
         await dynamoDBClient.put(newSubscription).promise();
 
-        return {
-            statusCode: 200,
-            body: JSON.stringify({
-                message: 'Subscription added successfully',
-            }),
-        };
+        return createResponse(200, { message: "Subscription added successfully!" })
     }
-    catch (err) {
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ message: err })
+    catch {
+        return createResponse(500, { message: "Something went wrong!" })
+    }
+}
+
+export const removeSubscriptionHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+    try {
+        const { music, user } = JSON.parse(event.body || '{}');
+
+        const getSubscriptionsForUserParams = {
+            TableName: "subscriptions",
+            IndexName: "QueryIndex",
+            KeyConditionExpression: "#user = :user and music = :music",
+            ExpressionAttributeNames: {
+                "#user": "user"
+            },
+            ExpressionAttributeValues: {
+                ":user": user,
+                ":music": music
+            }
         }
+        const { Items = [] } = await dynamoDBClient.query(getSubscriptionsForUserParams).promise()
+
+        for (const Item of Items) {
+            const removeSubscriptionParams = {
+                TableName: "subscriptions",
+                Key: {
+                    id: Item.id
+                }
+            }
+            await dynamoDBClient.delete(removeSubscriptionParams).promise()
+
+        };
+
+        return createResponse(200, { message: "Subscription Deleted Successfully!" })
+    }
+    catch {
+        return createResponse(500, { message: "Something went wrong!" })
     }
 }
