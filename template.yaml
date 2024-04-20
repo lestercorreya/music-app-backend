@@ -120,6 +120,7 @@ Resources:
       Policies: 
         - DynamoDBCrudPolicy:
             TableName: !Ref MusicTable
+        - AmazonS3ReadOnlyAccess
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:

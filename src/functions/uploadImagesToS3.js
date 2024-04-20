@@ -32,7 +32,6 @@ jsonData.songs.forEach(async (song) => {
         Bucket: "music-app-backend",
         Body: response.data,
         Key: song.artist + ".jpeg",
-        ACL: "public-read",
         ContentType: 'image/jpeg'
     }
 
